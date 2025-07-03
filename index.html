@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>图形推理刷题（100题）</title>
+  <style>
+    body { font-family: sans-serif; background: #f4f4f4; max-width: 800px; margin: auto; padding: 1em; }
+    .question { background: white; padding: 1em; border-radius: 8px; box-shadow: 0 0 6px rgba(0,0,0,0.1); margin-bottom: 1em; }
+    .options li { margin: 0.5em 0; cursor: pointer; }
+    .answer, .explanation { display: none; margin-top: 1em; padding: 0.5em; background: #eef; border-left: 4px solid #66f; }
+    .image-container img { max-width: 100%; margin: 1em 0; border: 1px solid #ccc; border-radius: 4px; }
+    .nav { display: flex; justify-content: space-between; margin-top: 2em; }
+    button { padding: 0.5em 1em; }
+  </style>
+</head>
+<body>
+<h1>图形推理刷题（前100题）</h1>
+<div id="app"></div>
+<div class="nav">
+  <button onclick="prev()">上一题</button>
+  <button onclick="next()">下一题</button>
+</div>
+
+<script>
+let questions = [];
+let current = 0;
+
+fetch("graphical_questions_100.json")
+  .then(res => res.json())
+  .then(data => {
+    questions = data;
+    render();
+  });
+
+function render() {
+  const q = questions[current];
+  const app = document.getElementById("app");
+  app.innerHTML = `
+    <div class="question">
+      <h2>第 ${q.id} 题</h2>
+      <p>${q.question}</p>
+      <div class="image-container">
+        <img src="images/question_${q.id}.png" alt="题目图 ${q.id}">
+        <p><input type='file' disabled title='GitHub Pages 不支持上传功能（未来可扩展）'></p>
+      </div>
+      <ul class="options">
+        ${q.options.map(opt => `<li onclick=\"showAnswer('${opt.charAt(0)}')\">${opt}</li>`).join("")}
+      </ul>
+      <div id="answer" class="answer"><strong>答案：</strong> ${q.answer}</div>
+      <div id="explanation" class="explanation"><strong>解析：</strong> ${q.explanation}</div>
+      <button onclick="toggleAnswer()">显示/隐藏答案与解析</button>
+    </div>
+  `;
+}
+
+function toggleAnswer() {
+  document.getElementById("answer").style.display = "block";
+  document.getElementById("explanation").style.display = "block";
+}
+
+function showAnswer(selected) {
+  toggleAnswer();
+  const correct = questions[current].answer;
+  alert(selected === correct ? "✅ 正确！" : `❌ 错误，正确答案是 ${correct}`);
+}
+
+function next() {
+  if (current < questions.length - 1) {
+    current++;
+    render();
+  }
+}
+
+function prev() {
+  if (current > 0) {
+    current--;
+    render();
+  }
+}
+</script>
+</body>
+</html>
