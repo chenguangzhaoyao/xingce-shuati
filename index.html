@@ -25,6 +25,7 @@
 <script>
 let questions = [];
 let current = 0;
+const uploadServer = "https://image-upload-server-5v83.onrender.com";
 
 fetch("graphical_questions_100.json")
   .then(res => res.json())
@@ -38,11 +39,13 @@ function render() {
   const app = document.getElementById("app");
   app.innerHTML = `
     <div class="question">
-      <h2>第 ${q.id} 题</h2>
+      <h2>第 ${current + 1} 题</h2>
       <p>${q.question}</p>
       <div class="image-container">
-        <img src="images/question_${q.id}.png" alt="题目图 ${q.id}">
-        <p><input type='file' disabled title='GitHub Pages 不支持上传功能（未来可扩展）'></p>
+        <img id="qimg" src="${uploadServer}/images/question_${q.id}.png" alt="题目图 ${q.id}" onerror="this.style.display='none'">
+        <p>
+          <input type="file" onchange="uploadImage(event, ${q.id})" />
+        </p>
       </div>
       <ul class="options">
         ${q.options.map(opt => `<li onclick=\"showAnswer('${opt.charAt(0)}')\">${opt}</li>`).join("")}
@@ -52,6 +55,22 @@ function render() {
       <button onclick="toggleAnswer()">显示/隐藏答案与解析</button>
     </div>
   `;
+}
+
+function uploadImage(event, id) {
+  const file = event.target.files[0];
+  const formData = new FormData();
+  formData.append("file", file);
+  fetch(`${uploadServer}/upload/${id}`, {
+    method: "POST",
+    body: formData
+  })
+    .then(res => res.json())
+    .then(json => {
+      alert("✅ 图片上传成功！");
+      document.getElementById("qimg").src = `${uploadServer}${json.file}?${Date.now()}`;
+    })
+    .catch(err => alert("❌ 上传失败: " + err));
 }
 
 function toggleAnswer() {
