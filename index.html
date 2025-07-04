@@ -10,7 +10,7 @@
     .options li { margin: 0.5em 0; cursor: pointer; }
     .answer, .explanation { display: none; margin-top: 1em; padding: 0.5em; background: #eef; border-left: 4px solid #66f; }
     .image-container img { max-width: 100%; margin: 1em 0; border: 1px solid #ccc; border-radius: 4px; display: block; position: relative; }
-    .image-wrapper { position: relative; display: inline-block; }
+    .image-wrapper { position: relative; display: inline-block; margin: 0.5em; }
     .delete-btn {
       position: absolute;
       top: 5px;
@@ -82,9 +82,13 @@ function render() {
   for (let i = 0; i < 50; i++) {
     const suffix = i === 0 ? "" : `_${i}`;
     const filename = `question_${q.id}${suffix}.png`;
+    const wrapperId = `imgwrap_${q.id}_${i}`;
+    const url = `${uploadServer}/images/${filename}`;
     imagesHTML += `
-      <div class='image-wrapper'>
-        <img src="${uploadServer}/images/${filename}" onerror="this.style.display='none'">
+      <div id="${wrapperId}" class='image-wrapper' style="display:none;">
+        <img src="${url}" 
+             onload="document.getElementById('${wrapperId}').style.display='inline-block'" 
+             onerror="document.getElementById('${wrapperId}').remove()">
         <button class='delete-btn' onclick="deleteImage(${q.id}, '${suffix}')">×</button>
       </div>`;
   }
