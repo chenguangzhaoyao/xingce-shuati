@@ -9,7 +9,20 @@
     .question { background: white; padding: 1em; border-radius: 8px; box-shadow: 0 0 6px rgba(0,0,0,0.1); margin-bottom: 1em; }
     .options li { margin: 0.5em 0; cursor: pointer; }
     .answer, .explanation { display: none; margin-top: 1em; padding: 0.5em; background: #eef; border-left: 4px solid #66f; }
-    .image-container img { max-width: 100%; margin: 1em 0; border: 1px solid #ccc; border-radius: 4px; display: block; }
+    .image-container img { max-width: 100%; margin: 1em 0; border: 1px solid #ccc; border-radius: 4px; display: block; position: relative; }
+    .image-wrapper { position: relative; display: inline-block; }
+    .delete-btn {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background: red;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 12px;
+      padding: 2px 6px;
+    }
     .fixed-controls {
       position: fixed;
       top: 10px;
@@ -24,6 +37,18 @@
       margin: 0.25em 0;
       padding: 0.5em 1em;
       font-size: 14px;
+    }
+    .drop-zone {
+      border: 2px dashed #aaa;
+      border-radius: 6px;
+      padding: 1em;
+      text-align: center;
+      margin-top: 1em;
+      background: #fdfdfd;
+      color: #666;
+    }
+    .question.drop-target {
+      outline: 3px dashed #66f;
     }
   </style>
 </head>
@@ -54,17 +79,26 @@ function render() {
   const q = questions[current];
   const app = document.getElementById("app");
   let imagesHTML = "";
-  ["", "_2", "_3"].forEach(suffix => {
-    imagesHTML += `<img src="${uploadServer}/images/question_${q.id}${suffix}.png" onerror="this.style.display='none'">`;
-  });
-  const inputHTML = `<input type="file" onchange="uploadImage(event, ${q.id})" />`;
+  for (let i = 0; i < 50; i++) {
+    const suffix = i === 0 ? "" : `_${i}`;
+    const filename = `question_${q.id}${suffix}.png`;
+    imagesHTML += `
+      <div class='image-wrapper'>
+        <img src="${uploadServer}/images/${filename}" onerror="this.style.display='none'">
+        <button class='delete-btn' onclick="deleteImage(${q.id}, '${suffix}')">×</button>
+      </div>`;
+  }
+
   app.innerHTML = `
-    <div class="question">
+    <div class="question" id="question-box" ondrop="dropHandler(event, ${q.id})" ondragover="dragOverHandler(event)">
       <h2>第 ${q.id} 题</h2>
       <p>${q.question || "（暂无题干，请参考图像）"}</p>
       <div class="image-container">
         ${imagesHTML}
-        <p>${inputHTML}</p>
+      </div>
+      <div class="drop-zone">
+        拖动图片到题目任意位置上传，或点击选择：
+        <input type="file" onchange="uploadImage(event, ${q.id})">
       </div>
       <ul class="options">
         ${q.options.map(opt => `<li onclick=\"showAnswer('${opt.charAt(0)}')\">${opt}</li>`).join("")}
@@ -78,18 +112,47 @@ function render() {
 
 function uploadImage(event, id) {
   const file = event.target.files[0];
+  if (!file) return;
   const formData = new FormData();
+  const timestamp = Date.now();
+  const suffix = `_${timestamp}`;
   formData.append("file", file);
-  fetch(`${uploadServer}/upload/${id}`, {
+  fetch(`${uploadServer}/upload/${id}${suffix}`, {
     method: "POST",
     body: formData
   })
     .then(res => res.json())
-    .then(json => {
+    .then(() => {
       alert("✅ 图片上传成功！");
       render();
     })
     .catch(err => alert("❌ 上传失败: " + err));
+}
+
+function dropHandler(event, id) {
+  event.preventDefault();
+  const file = event.dataTransfer.files[0];
+  if (file) {
+    const fakeInput = { target: { files: [file] } };
+    uploadImage(fakeInput, id);
+  }
+  event.currentTarget.classList.remove("drop-target");
+}
+
+function dragOverHandler(event) {
+  event.preventDefault();
+  event.currentTarget.classList.add("drop-target");
+}
+
+function deleteImage(id, suffix) {
+  if (!confirm("确定要删除这张图吗？")) return;
+  fetch(`${uploadServer}/delete/question_${id}${suffix}.png`, { method: "DELETE" })
+    .then(res => res.json())
+    .then(() => {
+      alert("✅ 已删除");
+      render();
+    })
+    .catch(err => alert("❌ 删除失败: " + err));
 }
 
 function toggleAnswer() {
