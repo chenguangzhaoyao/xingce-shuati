@@ -11,18 +11,6 @@
     .answer, .explanation { display: none; margin-top: 1em; padding: 0.5em; background: #eef; border-left: 4px solid #66f; }
     .image-container img { max-width: 100%; margin: 1em 0; border: 1px solid #ccc; border-radius: 4px; display: block; position: relative; }
     .image-wrapper { position: relative; display: inline-block; margin: 0.5em; }
-    .delete-btn {
-      position: absolute;
-      top: 5px;
-      right: 5px;
-      background: red;
-      color: white;
-      border: none;
-      border-radius: 50%;
-      cursor: pointer;
-      font-size: 12px;
-      padding: 2px 6px;
-    }
     .fixed-controls {
       position: fixed;
       top: 10px;
@@ -85,8 +73,7 @@ function render() {
     const url = `${uploadServer}/images/${filename}`;
     imagesHTML += `
       <div class='image-wrapper'>
-        <img src="${url}" onerror="this.parentNode.remove()" />
-        <button class='delete-btn' onclick="deleteImage(${q.id}, '${suffix}')">×</button>
+        <img src="${url}" onerror="this.style.display='none'" />
       </div>`;
   }
 
@@ -143,17 +130,6 @@ function dropHandler(event, id) {
 function dragOverHandler(event) {
   event.preventDefault();
   event.currentTarget.classList.add("drop-target");
-}
-
-function deleteImage(id, suffix) {
-  if (!confirm("确定要删除这张图吗？")) return;
-  fetch(`${uploadServer}/delete/question_${id}${suffix}.png`, { method: "DELETE" })
-    .then(res => res.json())
-    .then(() => {
-      alert("✅ 已删除");
-      render();
-    })
-    .catch(err => alert("❌ 删除失败: " + err));
 }
 
 function toggleAnswer() {
