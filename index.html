@@ -82,13 +82,10 @@ function render() {
   for (let i = 0; i < 50; i++) {
     const suffix = i === 0 ? "" : `_${i}`;
     const filename = `question_${q.id}${suffix}.png`;
-    const wrapperId = `imgwrap_${q.id}_${i}`;
     const url = `${uploadServer}/images/${filename}`;
     imagesHTML += `
-      <div id="${wrapperId}" class='image-wrapper' style="display:none;">
-        <img src="${url}" 
-             onload="document.getElementById('${wrapperId}').style.display='inline-block'" 
-             onerror="document.getElementById('${wrapperId}').remove()">
+      <div class='image-wrapper'>
+        <img src="${url}" onerror="this.parentNode.remove()" />
         <button class='delete-btn' onclick="deleteImage(${q.id}, '${suffix}')">×</button>
       </div>`;
   }
