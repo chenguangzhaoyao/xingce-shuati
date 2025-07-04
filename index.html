@@ -3,23 +3,39 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>图形推理刷题（100题）</title>
+  <title>图形推理刷题（218题）</title>
   <style>
-    body { font-family: sans-serif; background: #f4f4f4; max-width: 800px; margin: auto; padding: 1em; }
+    body { font-family: sans-serif; background: #f4f4f4; max-width: 900px; margin: auto; padding: 1em; }
     .question { background: white; padding: 1em; border-radius: 8px; box-shadow: 0 0 6px rgba(0,0,0,0.1); margin-bottom: 1em; }
     .options li { margin: 0.5em 0; cursor: pointer; }
     .answer, .explanation { display: none; margin-top: 1em; padding: 0.5em; background: #eef; border-left: 4px solid #66f; }
-    .image-container img { max-width: 100%; margin: 1em 0; border: 1px solid #ccc; border-radius: 4px; }
-    .nav { display: flex; justify-content: space-between; margin-top: 2em; }
-    button { padding: 0.5em 1em; }
+    .image-container img { max-width: 100%; margin: 1em 0; border: 1px solid #ccc; border-radius: 4px; display: block; }
+    .fixed-controls {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: white;
+      border: 1px solid #ccc;
+      padding: 1em;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .fixed-controls button, .fixed-controls input {
+      margin: 0.25em 0;
+      padding: 0.5em 1em;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
-<h1>图形推理刷题（前100题）</h1>
+<h1>图形推理刷题（共218题）</h1>
 <div id="app"></div>
-<div class="nav">
+
+<div class="fixed-controls">
   <button onclick="prev()">上一题</button>
-  <button onclick="next()">下一题</button>
+  <button onclick="next()">下一题</button><br>
+  <input type="number" id="jumpInput" placeholder="跳转题号" style="width: 100px;">
+  <button onclick="jumpTo()">跳转</button>
 </div>
 
 <script>
@@ -27,7 +43,7 @@ let questions = [];
 let current = 0;
 const uploadServer = "https://image-upload-server-5v83.onrender.com";
 
-fetch("graphical_questions_100.json")
+fetch("graphical_questions_full_218.json")
   .then(res => res.json())
   .then(data => {
     questions = data;
@@ -37,15 +53,18 @@ fetch("graphical_questions_100.json")
 function render() {
   const q = questions[current];
   const app = document.getElementById("app");
+  let imagesHTML = "";
+  ["", "_2", "_3"].forEach(suffix => {
+    imagesHTML += `<img src="${uploadServer}/images/question_${q.id}${suffix}.png" onerror="this.style.display='none'">`;
+  });
+  const inputHTML = `<input type="file" onchange="uploadImage(event, ${q.id})" />`;
   app.innerHTML = `
     <div class="question">
-      <h2>第 ${current + 1} 题</h2>
-      <p>${q.question}</p>
+      <h2>第 ${q.id} 题</h2>
+      <p>${q.question || "（暂无题干，请参考图像）"}</p>
       <div class="image-container">
-        <img id="qimg" src="${uploadServer}/images/question_${q.id}.png" alt="题目图 ${q.id}" onerror="this.style.display='none'">
-        <p>
-          <input type="file" onchange="uploadImage(event, ${q.id})" />
-        </p>
+        ${imagesHTML}
+        <p>${inputHTML}</p>
       </div>
       <ul class="options">
         ${q.options.map(opt => `<li onclick=\"showAnswer('${opt.charAt(0)}')\">${opt}</li>`).join("")}
@@ -68,7 +87,7 @@ function uploadImage(event, id) {
     .then(res => res.json())
     .then(json => {
       alert("✅ 图片上传成功！");
-      document.getElementById("qimg").src = `${uploadServer}${json.file}?${Date.now()}`;
+      render();
     })
     .catch(err => alert("❌ 上传失败: " + err));
 }
@@ -95,6 +114,16 @@ function prev() {
   if (current > 0) {
     current--;
     render();
+  }
+}
+
+function jumpTo() {
+  const val = parseInt(document.getElementById("jumpInput").value);
+  if (!isNaN(val) && val >= 1 && val <= questions.length) {
+    current = val - 1;
+    render();
+  } else {
+    alert("请输入 1 到 " + questions.length + " 的题号");
   }
 }
 </script>
