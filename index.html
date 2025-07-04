@@ -38,10 +38,25 @@
     .question.drop-target {
       outline: 3px dashed #66f;
     }
+    #login-box {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: white;
+      border: 1px solid #ccc;
+      padding: 1em;
+      border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
   </style>
 </head>
 <body>
 <h1>图形推理刷题（共218题）</h1>
+<div id="login-box">
+  用户名：<input type="text" id="usernameInput" placeholder="请输入用户名">
+  <button onclick="login()">登录</button>
+</div>
+<div id="welcome" style="margin-bottom: 1em;"></div>
 <div id="app"></div>
 
 <div class="fixed-controls">
@@ -55,7 +70,9 @@
 let questions = [];
 let imageMap = {};
 let current = 0;
+let currentUser = localStorage.getItem("graph_user") || "";
 const uploadServer = "https://image-upload-server-5v83.onrender.com";
+const recordKey = id => `graph_record_${id}`;
 
 Promise.all([
   fetch("graphical_questions_full_218.json").then(res => res.json()),
@@ -63,8 +80,22 @@ Promise.all([
 ]).then(([qData, imgMap]) => {
   questions = qData;
   imageMap = imgMap;
-  render();
+  if (currentUser) initUser();
 });
+
+function login() {
+  const val = document.getElementById("usernameInput").value.trim();
+  if (!val) return alert("请输入用户名");
+  localStorage.setItem("graph_user", val);
+  currentUser = val;
+  initUser();
+}
+
+function initUser() {
+  document.getElementById("login-box").style.display = "none";
+  document.getElementById("welcome").innerText = `👋 欢迎你，${currentUser}`;
+  render();
+}
 
 function render() {
   const q = questions[current];
@@ -74,6 +105,8 @@ function render() {
     const url = `${uploadServer}/images/${filename}`;
     return `<div class='image-wrapper'><img src="${url}" onerror="this.style.display='none'" /></div>`;
   }).join("");
+  const record = JSON.parse(localStorage.getItem(recordKey(currentUser)) || '{}');
+  const userChoice = record[q.id] || null;
 
   app.innerHTML = `
     <div class="question" id="question-box" ondrop="dropHandler(event, ${q.id})" ondragover="dragOverHandler(event)">
@@ -85,13 +118,29 @@ function render() {
         <input type="file" onchange="uploadImage(event, ${q.id})">
       </div>
       <ul class="options">
-        ${q.options.map(opt => `<li onclick=\"showAnswer('${opt.charAt(0)}')\">${opt}</li>`).join("")}
+        ${q.options.map(opt => {
+          const sel = opt.charAt(0);
+          const isSelected = userChoice === sel;
+          return `<li onclick=\"selectAnswer('${sel}')\" style=\"${isSelected ? 'color: green; font-weight: bold;' : ''}\">${opt}</li>`;
+        }).join("")}
       </ul>
       <div id="answer" class="answer"><strong>答案：</strong> ${q.answer}</div>
       <div id="explanation" class="explanation"><strong>解析：</strong> ${q.explanation}</div>
       <button onclick="toggleAnswer()">显示/隐藏答案与解析</button>
     </div>
   `;
+}
+
+function selectAnswer(sel) {
+  const qid = questions[current].id;
+  const correct = questions[current].answer;
+  const key = recordKey(currentUser);
+  let record = JSON.parse(localStorage.getItem(key) || '{}');
+  record[qid] = sel;
+  localStorage.setItem(key, JSON.stringify(record));
+  toggleAnswer();
+  alert(sel === correct ? "✅ 正确！" : `❌ 错误，正确答案是 ${correct}`);
+  render();
 }
 
 function uploadImage(event, id) {
@@ -131,12 +180,6 @@ function dragOverHandler(event) {
 function toggleAnswer() {
   document.getElementById("answer").style.display = "block";
   document.getElementById("explanation").style.display = "block";
-}
-
-function showAnswer(selected) {
-  toggleAnswer();
-  const correct = questions[current].answer;
-  alert(selected === correct ? "✅ 正确！" : `❌ 错误，正确答案是 ${correct}`);
 }
 
 function next() {
