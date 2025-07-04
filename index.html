@@ -53,37 +53,33 @@
 
 <script>
 let questions = [];
+let imageMap = {};
 let current = 0;
 const uploadServer = "https://image-upload-server-5v83.onrender.com";
 
-fetch("graphical_questions_full_218.json")
-  .then(res => res.json())
-  .then(data => {
-    questions = data;
-    render();
-  });
+Promise.all([
+  fetch("graphical_questions_full_218.json").then(res => res.json()),
+  fetch(`${uploadServer}/images/question_image_map.json`).then(res => res.json())
+]).then(([qData, imgMap]) => {
+  questions = qData;
+  imageMap = imgMap;
+  render();
+});
 
 function render() {
   const q = questions[current];
   const app = document.getElementById("app");
-  let imagesHTML = "";
-  for (let i = 0; i < 50; i++) {
-    const suffix = i === 0 ? "" : `_${i}`;
-    const filename = `question_${q.id}${suffix}.png`;
+  const imgs = imageMap[q.id] || [];
+  const imagesHTML = imgs.map(filename => {
     const url = `${uploadServer}/images/${filename}`;
-    imagesHTML += `
-      <div class='image-wrapper'>
-        <img src="${url}" onerror="this.style.display='none'" />
-      </div>`;
-  }
+    return `<div class='image-wrapper'><img src="${url}" onerror="this.style.display='none'" /></div>`;
+  }).join("");
 
   app.innerHTML = `
     <div class="question" id="question-box" ondrop="dropHandler(event, ${q.id})" ondragover="dragOverHandler(event)">
       <h2>第 ${q.id} 题</h2>
       <p>${q.question || "（暂无题干，请参考图像）"}</p>
-      <div class="image-container">
-        ${imagesHTML}
-      </div>
+      <div class="image-container">${imagesHTML}</div>
       <div class="drop-zone">
         拖动图片到题目任意位置上传，或点击选择：
         <input type="file" onchange="uploadImage(event, ${q.id})">
@@ -112,7 +108,7 @@ function uploadImage(event, id) {
     .then(res => res.json())
     .then(() => {
       alert("✅ 图片上传成功！");
-      render();
+      location.reload();
     })
     .catch(err => alert("❌ 上传失败: " + err));
 }
