@@ -3,208 +3,159 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>图形推理刷题（218题）</title>
+  <title>图形推理刷题</title>
+  <!-- 样式代码和之前一样，这里省略以保持简洁 -->
   <style>
-    body { font-family: sans-serif; background: #f4f4f4; max-width: 900px; margin: auto; padding: 1em; }
-    .question { background: white; padding: 1em; border-radius: 8px; box-shadow: 0 0 6px rgba(0,0,0,0.1); margin-bottom: 1em; }
-    .options li { margin: 0.5em 0; cursor: pointer; }
-    .answer, .explanation { display: none; margin-top: 1em; padding: 0.5em; background: #eef; border-left: 4px solid #66f; }
-    .image-container img { max-width: 100%; margin: 1em 0; border: 1px solid #ccc; border-radius: 4px; display: block; position: relative; }
-    .image-wrapper { position: relative; display: inline-block; margin: 0.5em; }
-    .fixed-controls {
-      position: fixed;
-      top: 10px;
-      right: 10px;
-      background: white;
-      border: 1px solid #ccc;
-      padding: 1em;
-      border-radius: 6px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    .fixed-controls button, .fixed-controls input {
-      margin: 0.25em 0;
-      padding: 0.5em 1em;
-      font-size: 14px;
-    }
-    .drop-zone {
-      border: 2px dashed #aaa;
-      border-radius: 6px;
-      padding: 1em;
-      text-align: center;
-      margin-top: 1em;
-      background: #fdfdfd;
-      color: #666;
-    }
-    .question.drop-target {
-      outline: 3px dashed #66f;
-    }
-    #login-box {
-      position: fixed;
-      top: 20px;
-      left: 20px;
-      background: white;
-      border: 1px solid #ccc;
-      padding: 1em;
-      border-radius: 6px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; line-height: 1.6; background: #f0f2f5; color: #333; }
+    .container { max-width: 800px; margin: 20px auto; padding: 20px; }
+    .question-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    .question-header { border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; font-weight: bold;}
+    .question-body p { margin-top: 0; }
+    .options-list { list-style: none; padding: 0; }
+    .options-list li { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; padding: 12px 15px; margin-bottom: 10px; cursor: pointer; transition: background-color 0.2s; }
+    .options-list li:hover { background: #e9ecef; }
+    .feedback-area { margin-top: 15px; }
+    .answer, .explanation { display: none; margin-top: 15px; padding: 15px; background: #e6f7ff; border-left: 4px solid #1890ff; border-radius: 4px; }
+    .image-container { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
+    .image-container img { max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px; background: #fff; padding: 5px; box-sizing: border-box; }
+    .navigation { display: flex; justify-content: space-between; margin-top: 20px; }
+    button { padding: 10px 20px; border: none; background-color: #007bff; color: white; border-radius: 5px; cursor: pointer; font-size: 16px; }
+    button:disabled { background-color: #ccc; cursor: not-allowed; }
+    h1 { text-align: center; color: #1d3557; }
   </style>
 </head>
 <body>
-<h1>图形推理刷题（共218题）</h1>
-<div id="login-box">
-  用户名：<input type="text" id="usernameInput" placeholder="请输入用户名">
-  <button onclick="login()">登录</button>
-</div>
-<div id="welcome" style="margin-bottom: 1em;"></div>
-<div id="app"></div>
 
-<div class="fixed-controls">
-  <button onclick="prev()">上一题</button>
-  <button onclick="next()">下一题</button><br>
-  <input type="number" id="jumpInput" placeholder="跳转题号" style="width: 100px;">
-  <button onclick="jumpTo()">跳转</button>
+<div class="container">
+    <h1>图形推理刷题</h1>
+    <div id="app"><!-- 题目内容将在这里动态生成 --></div>
+    <div class="navigation">
+      <button id="prevBtn" onclick="prev()">上一题</button>
+      <span id="progress"></span>
+      <button id="nextBtn" onclick="next()">下一题</button>
+    </div>
 </div>
 
 <script>
-let questions = [];
-let imageMap = {};
-let current = 0;
-let currentUser = localStorage.getItem("graph_user") || "";
-const uploadServer = "https://image-upload-server-5v83.onrender.com";
-const recordKey = id => `graph_record_${id}`;
+// --- 1. 配置 ---
+const imageBaseUrl = "https://your-username.github.io/your-repo-name/images/"; 
+const questionsJsonFile = "graphical_questions.json";
+const imageCountsJsonFile = "image_counts.json";
 
+// --- 2. 全局变量 ---
+let questions = []; // 这里将存储处理后的完整题目数据
+let currentQuestionIndex = 0;
+
+const app = document.getElementById("app");
+const prevBtn = document.getElementById("prevBtn");
+const nextBtn = document.getElementById("nextBtn");
+const progressSpan = document.getElementById("progress");
+
+// --- 3. 初始化 (核心修改区域) ---
+// 使用 Promise.all 来同时加载两个文件
 Promise.all([
-  fetch("graphical_questions_full_218.json").then(res => res.json()),
-  fetch(`${uploadServer}/images/question_image_map.json`).then(res => res.json())
-]).then(([qData, imgMap]) => {
-  questions = qData;
-  imageMap = imgMap;
-  if (currentUser) initUser();
+    fetch(questionsJsonFile).then(res => res.ok ? res.json() : Promise.reject(new Error(`加载失败: ${questionsJsonFile}`))),
+    fetch(imageCountsJsonFile).then(res => res.ok ? res.json() : Promise.reject(new Error(`加载失败: ${imageCountsJsonFile}`)))
+])
+.then(([questionsData, imageCounts]) => {
+    
+    // --- 数据处理：将图片信息整合到题目数据中 ---
+    let imagePointer = 1; // 这是一个连续的图片指针，从 image1.png 开始
+    
+    const processedQuestions = questionsData.map(question => {
+        const count = imageCounts[question.id] || 0; // 从 image_counts.json 中获取该题的图片数量
+        const imageNames = [];
+        
+        for (let i = 0; i < count; i++) {
+            imageNames.push(`image${imagePointer}.png`);
+            imagePointer++;
+        }
+        
+        // 返回一个包含图片信息的新对象
+        return {
+            ...question,       // 包含原始的 id, question, options 等
+            images: imageNames // 添加新生成的 images 数组
+        };
+    });
+
+    questions = processedQuestions; // 将处理好的完整数据赋给全局变量
+    renderQuestion(); // 开始渲染第一题
+
+})
+.catch(error => {
+    app.innerHTML = `<p style="color: red; text-align: center;">加载题目数据时出错，请检查文件是否存在或JSON格式是否正确。<br>${error.message}</p>`;
+    console.error("加载数据失败:", error);
 });
 
-function login() {
-  const val = document.getElementById("usernameInput").value.trim();
-  if (!val) return alert("请输入用户名");
-  localStorage.setItem("graph_user", val);
-  currentUser = val;
-  initUser();
-}
 
-function initUser() {
-  document.getElementById("login-box").style.display = "none";
-  document.getElementById("welcome").innerText = `👋 欢迎你，${currentUser}`;
-  render();
-}
-
-function render() {
-  const q = questions[current];
-  const app = document.getElementById("app");
-  const imgs = imageMap[q.id] || [];
-  const imagesHTML = imgs.map(filename => {
-    const url = `${uploadServer}/images/${filename}`;
-    return `<div class='image-wrapper'><img src="${url}" onerror="this.style.display='none'" /></div>`;
-  }).join("");
-  const record = JSON.parse(localStorage.getItem(recordKey(currentUser)) || '{}');
-  const userChoice = record[q.id] || null;
+// --- 4. 渲染函数 (无需修改) ---
+// 这个函数和之前版本完全一样，因为它期望的 `q.images` 数组已经在上一步被动态创建好了。
+function renderQuestion() {
+  if (questions.length === 0) return;
+  const q = questions[currentQuestionIndex];
+  const imagesHtml = q.images.map(imgName => 
+    `<img src="${imageBaseUrl}${imgName}" alt="题目图" onerror="this.alt='图片加载失败';">`
+  ).join('');
 
   app.innerHTML = `
-    <div class="question" id="question-box" ondrop="dropHandler(event, ${q.id})" ondragover="dragOverHandler(event)">
-      <h2>第 ${q.id} 题</h2>
-      <p>${q.question || "（暂无题干，请参考图像）"}</p>
-      <div class="image-container">${imagesHTML}</div>
-      <div class="drop-zone">
-        拖动图片到题目任意位置上传，或点击选择：
-        <input type="file" onchange="uploadImage(event, ${q.id})">
+    <div class="question-card">
+      <div class="question-header">第 ${q.id} 题 (总 ${questions.length} 题)</div>
+      <div class="question-body">
+        <p>${q.question}</p>
+        <div class="image-container">${imagesHtml}</div>
+        <ul class="options-list">
+          ${q.options.map(opt => `<li onclick="checkAnswer('${opt.charAt(0)}')">${opt}</li>`).join("")}
+        </ul>
+        <div class="feedback-area">
+          <button onclick="toggleFeedback()">显示/隐藏答案与解析</button>
+          <div class="answer" style="display: none;"><strong>答案：</strong> ${q.answer}</div>
+          <div class="explanation" style="display: none;"><strong>解析：</strong> ${q.explanation}</div>
+        </div>
       </div>
-      <ul class="options">
-        ${q.options.map(opt => {
-          const sel = opt.charAt(0);
-          const isSelected = userChoice === sel;
-          return `<li onclick=\"selectAnswer('${sel}')\" style=\"${isSelected ? 'color: green; font-weight: bold;' : ''}\">${opt}</li>`;
-        }).join("")}
-      </ul>
-      <div id="answer" class="answer"><strong>答案：</strong> ${q.answer}</div>
-      <div id="explanation" class="explanation"><strong>解析：</strong> ${q.explanation}</div>
-      <button onclick="toggleAnswer()">显示/隐藏答案与解析</button>
     </div>
   `;
+  updateNavButtons();
 }
 
-function selectAnswer(sel) {
-  const qid = questions[current].id;
-  const correct = questions[current].answer;
-  const key = recordKey(currentUser);
-  let record = JSON.parse(localStorage.getItem(key) || '{}');
-  record[qid] = sel;
-  localStorage.setItem(key, JSON.stringify(record));
-  toggleAnswer();
-  alert(sel === correct ? "✅ 正确！" : `❌ 错误，正确答案是 ${correct}`);
-  render();
+// --- 5. 其他函数 (基本无需修改) ---
+function updateNavButtons() { /* ... */ }
+function toggleFeedback() { /* ... */ }
+function checkAnswer(selectedOption) { /* ... */ }
+function next() { /* ... */ }
+function prev() { /* ... */ }
+// 这些函数的具体实现和上一版一样，这里就不重复贴出了。
+// 您可以把上一版代码中的这几个函数直接复制过来。
+function updateNavButtons() {
+    progressSpan.textContent = `${currentQuestionIndex + 1} / ${questions.length}`;
+    prevBtn.disabled = (currentQuestionIndex === 0);
+    nextBtn.disabled = (currentQuestionIndex === questions.length - 1);
 }
-
-function uploadImage(event, id) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const formData = new FormData();
-  const timestamp = Date.now();
-  const suffix = `_${timestamp}`;
-  formData.append("file", file);
-  fetch(`${uploadServer}/upload/${id}${suffix}`, {
-    method: "POST",
-    body: formData
-  })
-    .then(res => res.json())
-    .then(() => {
-      alert("✅ 图片上传成功！");
-      location.reload();
-    })
-    .catch(err => alert("❌ 上传失败: " + err));
+function toggleFeedback() {
+    const answerEl = document.querySelector(".answer");
+    const explanationEl = document.querySelector(".explanation");
+    const isVisible = answerEl.style.display === "block";
+    answerEl.style.display = isVisible ? "none" : "block";
+    explanationEl.style.display = isVisible ? "none" : "block";
 }
-
-function dropHandler(event, id) {
-  event.preventDefault();
-  const file = event.dataTransfer.files[0];
-  if (file) {
-    const fakeInput = { target: { files: [file] } };
-    uploadImage(fakeInput, id);
-  }
-  event.currentTarget.classList.remove("drop-target");
+function checkAnswer(selectedOption) {
+  const q = questions[currentQuestionIndex];
+  const isCorrect = selectedOption.toUpperCase() === q.answer.toUpperCase();
+  toggleFeedback(); // 直接显示答案
+  alert(isCorrect ? "✅ 正确！" : `❌ 错误，正确答案是 ${q.answer}`);
 }
-
-function dragOverHandler(event) {
-  event.preventDefault();
-  event.currentTarget.classList.add("drop-target");
-}
-
-function toggleAnswer() {
-  document.getElementById("answer").style.display = "block";
-  document.getElementById("explanation").style.display = "block";
-}
-
 function next() {
-  if (current < questions.length - 1) {
-    current++;
-    render();
+  if (currentQuestionIndex < questions.length - 1) {
+    currentQuestionIndex++;
+    renderQuestion();
   }
 }
-
 function prev() {
-  if (current > 0) {
-    current--;
-    render();
-  }
-}
-
-function jumpTo() {
-  const val = parseInt(document.getElementById("jumpInput").value);
-  if (!isNaN(val) && val >= 1 && val <= questions.length) {
-    current = val - 1;
-    render();
-  } else {
-    alert("请输入 1 到 " + questions.length + " 的题号");
+  if (currentQuestionIndex > 0) {
+    currentQuestionIndex--;
+    renderQuestion();
   }
 }
 </script>
+
 </body>
 </html>
