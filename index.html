@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>图形推理刷题</title>
   <style>
-    /* 修正：所有中文句号 。都改为了英文句点 . */
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; line-height: 1.6; background: #f0f2f5; color: #333; }
     .container { max-width: 800px; margin: 20px auto; padding: 20px; }
     .question-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; }
@@ -38,7 +37,6 @@
 
 <script>
 // --- 1. 配置 ---
-// 这个路径是正确的，无需修改
 const imageBaseUrl = "images/"; 
 const questionsJsonFile = "graphical_questions.json";
 const imageCountsJsonFile = "image_counts.json";
@@ -53,22 +51,23 @@ const nextBtn = document.getElementById("nextBtn");
 const progressSpan = document.getElementById("progress");
 
 // --- 3. 初始化 ---
-// 修正：Promise。all 改为 Promise.all
 Promise.all([
     fetch(questionsJsonFile).then(res => res.ok ? res.json() : Promise.reject(new Error(`加载失败: ${questionsJsonFile}`))),
     fetch(imageCountsJsonFile).then(res => res.ok ? res.json() : Promise.reject(new Error(`加载失败: ${imageCountsJsonFile}`)))
 ])
-// 修正：.then 中文逗号 ， 改为英文逗号 ,
 .then(([questionsData, imageCounts]) => {
     
     let imagePointer = 1;
     
     const processedQuestions = questionsData.map(question => {
-        const count = imageCounts[String(question.id)] || 0; // 确保使用字符串ID进行匹配
+        const count = imageCounts[String(question.id)] || 0;
         const imageNames = [];
         
         for (let i = 0; i < count; i++) {
-            imageNames.push(`image${imagePointer}.png`);
+            // ==========================================================
+            // ===                ★★★ 核心修改点 ★★★                ===
+            // ==========================================================
+            imageNames.push(`image${imagePointer}.jpeg`); // 已从 .png 修改为 .jpeg
             imagePointer++;
         }
         
@@ -93,14 +92,12 @@ function renderQuestion() {
   if (questions.length === 0) return;
   const q = questions[currentQuestionIndex];
   
-  // 确保 q.images 存在且是一个数组
   const imagesHtml = (q.images && Array.isArray(q.images)) 
     ? q.images.map(imgName => 
-        `<img src="${imageBaseUrl}${imgName}" alt="题目图 ${imgName}" onerror="this.alt='图片加载失败'; this.style.display='none';">`
+        `<img src="${imageBaseUrl}${imgName}" alt="题目图 ${imgName}" onerror="this.alt='图片加载失败: ${imgName}'; console.error('无法加载图片:', this.src);">`
       ).join('')
     : '';
 
-  // 确保 q.options 存在且是一个数组
   const optionsHtml = (q.options && Array.isArray(q.options))
     ? q.options.map(opt => `<li onclick="checkAnswer('${String(opt).charAt(0)}')">${opt}</li>`).join("")
     : '<li>无选项数据</li>';
@@ -125,7 +122,7 @@ function renderQuestion() {
   updateNavButtons();
 }
 
-// --- 5. 其他函数 ---
+// --- 5. 其他函数 (无需修改) ---
 function updateNavButtons() {
     progressSpan.textContent = `${currentQuestionIndex + 1} / ${questions.length}`;
     prevBtn.disabled = (currentQuestionIndex === 0);
@@ -141,14 +138,13 @@ function toggleFeedback() {
 }
 function checkAnswer(selectedOption) {
   const q = questions[currentQuestionIndex];
-  // 增加对 q.answer 是否存在的检查
   if (q.answer) {
       const isCorrect = selectedOption.toUpperCase() === q.answer.toUpperCase();
       alert(isCorrect ? "✅ 正确！" : `❌ 错误，正确答案是 ${q.answer}`);
   } else {
       alert("本题没有提供标准答案。");
   }
-  toggleFeedback(); // 直接显示答案
+  toggleFeedback();
 }
 function next() {
   if (currentQuestionIndex < questions.length - 1) {
