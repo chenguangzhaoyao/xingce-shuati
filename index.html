@@ -4,21 +4,21 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>图形推理刷题</title>
-  <!-- 样式代码和之前一样，这里省略以保持简洁 -->
   <style>
+    /* 修正：所有中文句号 。都改为了英文句点 . */
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; line-height: 1.6; background: #f0f2f5; color: #333; }
-    。container { max-width: 800px; margin: 20px auto; padding: 20px; }
-    。question-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; }
-    。question-header { border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; font-weight: bold;}
-    。question-body p { margin-top: 0; }
-    。options-list { list-style: none; padding: 0; }
-    。options-list li { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; padding: 12px 15px; margin-bottom: 10px; cursor: pointer; transition: background-color 0.2s; }
-    。options-list li:hover { background: #e9ecef; }
-    。feedback-area { margin-top: 15px; }
-    。answer, .explanation { display: none; margin-top: 15px; padding: 15px; background: #e6f7ff; border-left: 4px solid #1890ff; border-radius: 4px; }
-    。image-container { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
-    。image-container img { max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px; background: #fff; padding: 5px; box-sizing: border-box; }
-    。navigation { display: flex; justify-content: space-between; margin-top: 20px; }
+    .container { max-width: 800px; margin: 20px auto; padding: 20px; }
+    .question-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    .question-header { border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; font-weight: bold;}
+    .question-body p { margin-top: 0; }
+    .options-list { list-style: none; padding: 0; }
+    .options-list li { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; padding: 12px 15px; margin-bottom: 10px; cursor: pointer; transition: background-color 0.2s; }
+    .options-list li:hover { background: #e9ecef; }
+    .feedback-area { margin-top: 15px; }
+    .answer, .explanation { display: none; margin-top: 15px; padding: 15px; background: #e6f7ff; border-left: 4px solid #1890ff; border-radius: 4px; }
+    .image-container { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
+    .image-container img { max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px; background: #fff; padding: 5px; box-sizing: border-box; }
+    .navigation { display: flex; justify-content: space-between; margin-top: 20px; }
     button { padding: 10px 20px; border: none; background-color: #007bff; color: white; border-radius: 5px; cursor: pointer; font-size: 16px; }
     button:disabled { background-color: #ccc; cursor: not-allowed; }
     h1 { text-align: center; color: #1d3557; }
@@ -38,12 +38,13 @@
 
 <script>
 // --- 1. 配置 ---
+// 这个路径是正确的，无需修改
 const imageBaseUrl = "images/"; 
 const questionsJsonFile = "graphical_questions.json";
 const imageCountsJsonFile = "image_counts.json";
 
 // --- 2. 全局变量 ---
-let questions = []; // 这里将存储处理后的完整题目数据
+let questions = [];
 let currentQuestionIndex = 0;
 
 const app = document.getElementById("app");
@@ -51,19 +52,19 @@ const prevBtn = document.getElementById("prevBtn");
 const nextBtn = document.getElementById("nextBtn");
 const progressSpan = document.getElementById("progress");
 
-// --- 3. 初始化 (核心修改区域) ---
-// 使用 Promise.all 来同时加载两个文件
-Promise。all([
+// --- 3. 初始化 ---
+// 修正：Promise。all 改为 Promise.all
+Promise.all([
     fetch(questionsJsonFile).then(res => res.ok ? res.json() : Promise.reject(new Error(`加载失败: ${questionsJsonFile}`))),
     fetch(imageCountsJsonFile).then(res => res.ok ? res.json() : Promise.reject(new Error(`加载失败: ${imageCountsJsonFile}`)))
 ])
-。then(([questionsData， imageCounts]) => {
+// 修正：.then 中文逗号 ， 改为英文逗号 ,
+.then(([questionsData, imageCounts]) => {
     
-    // --- 数据处理：将图片信息整合到题目数据中 ---
-    let imagePointer = 1; // 这是一个连续的图片指针，从 image1.png 开始
+    let imagePointer = 1;
     
     const processedQuestions = questionsData.map(question => {
-        const count = imageCounts[question.id] || 0; // 从 image_counts.json 中获取该题的图片数量
+        const count = imageCounts[String(question.id)] || 0; // 确保使用字符串ID进行匹配
         const imageNames = [];
         
         for (let i = 0; i < count; i++) {
@@ -71,15 +72,14 @@ Promise。all([
             imagePointer++;
         }
         
-        // 返回一个包含图片信息的新对象
         return {
-            ...question,       // 包含原始的 id, question, options 等
-            images: imageNames // 添加新生成的 images 数组
+            ...question,
+            images: imageNames
         };
     });
 
-    questions = processedQuestions; // 将处理好的完整数据赋给全局变量
-    renderQuestion(); // 开始渲染第一题
+    questions = processedQuestions;
+    renderQuestion();
 
 })
 .catch(error => {
@@ -88,28 +88,36 @@ Promise。all([
 });
 
 
-// --- 4. 渲染函数 (无需修改) ---
-// 这个函数和之前版本完全一样，因为它期望的 `q.images` 数组已经在上一步被动态创建好了。
+// --- 4. 渲染函数 ---
 function renderQuestion() {
   if (questions.length === 0) return;
   const q = questions[currentQuestionIndex];
-  const imagesHtml = q.images.map(imgName => 
-    `<img src="${imageBaseUrl}${imgName}" alt="题目图" onerror="this.alt='图片加载失败';">`
-  ).join('');
+  
+  // 确保 q.images 存在且是一个数组
+  const imagesHtml = (q.images && Array.isArray(q.images)) 
+    ? q.images.map(imgName => 
+        `<img src="${imageBaseUrl}${imgName}" alt="题目图 ${imgName}" onerror="this.alt='图片加载失败'; this.style.display='none';">`
+      ).join('')
+    : '';
+
+  // 确保 q.options 存在且是一个数组
+  const optionsHtml = (q.options && Array.isArray(q.options))
+    ? q.options.map(opt => `<li onclick="checkAnswer('${String(opt).charAt(0)}')">${opt}</li>`).join("")
+    : '<li>无选项数据</li>';
 
   app.innerHTML = `
     <div class="question-card">
       <div class="question-header">第 ${q.id} 题 (总 ${questions.length} 题)</div>
       <div class="question-body">
-        <p>${q.question}</p>
+        <p>${q.question || "题目内容缺失"}</p>
         <div class="image-container">${imagesHtml}</div>
         <ul class="options-list">
-          ${q.options.map(opt => `<li onclick="checkAnswer('${opt.charAt(0)}')">${opt}</li>`).join("")}
+          ${optionsHtml}
         </ul>
         <div class="feedback-area">
           <button onclick="toggleFeedback()">显示/隐藏答案与解析</button>
-          <div class="answer" style="display: none;"><strong>答案：</strong> ${q.answer}</div>
-          <div class="explanation" style="display: none;"><strong>解析：</strong> ${q.explanation}</div>
+          <div class="answer" style="display: none;"><strong>答案：</strong> ${q.answer || "无"}</div>
+          <div class="explanation" style="display: none;"><strong>解析：</strong> ${q.explanation || "无"}</div>
         </div>
       </div>
     </div>
@@ -117,14 +125,7 @@ function renderQuestion() {
   updateNavButtons();
 }
 
-// --- 5. 其他函数 (基本无需修改) ---
-function updateNavButtons() { /* ... */ }
-function toggleFeedback() { /* ... */ }
-function checkAnswer(selectedOption) { /* ... */ }
-function next() { /* ... */ }
-function prev() { /* ... */ }
-// 这些函数的具体实现和上一版一样，这里就不重复贴出了。
-// 您可以把上一版代码中的这几个函数直接复制过来。
+// --- 5. 其他函数 ---
 function updateNavButtons() {
     progressSpan.textContent = `${currentQuestionIndex + 1} / ${questions.length}`;
     prevBtn.disabled = (currentQuestionIndex === 0);
@@ -133,15 +134,21 @@ function updateNavButtons() {
 function toggleFeedback() {
     const answerEl = document.querySelector(".answer");
     const explanationEl = document.querySelector(".explanation");
+    if (!answerEl || !explanationEl) return;
     const isVisible = answerEl.style.display === "block";
     answerEl.style.display = isVisible ? "none" : "block";
     explanationEl.style.display = isVisible ? "none" : "block";
 }
 function checkAnswer(selectedOption) {
   const q = questions[currentQuestionIndex];
-  const isCorrect = selectedOption.toUpperCase() === q.answer.toUpperCase();
+  // 增加对 q.answer 是否存在的检查
+  if (q.answer) {
+      const isCorrect = selectedOption.toUpperCase() === q.answer.toUpperCase();
+      alert(isCorrect ? "✅ 正确！" : `❌ 错误，正确答案是 ${q.answer}`);
+  } else {
+      alert("本题没有提供标准答案。");
+  }
   toggleFeedback(); // 直接显示答案
-  alert(isCorrect ? "✅ 正确！" : `❌ 错误，正确答案是 ${q.answer}`);
 }
 function next() {
   if (currentQuestionIndex < questions.length - 1) {
