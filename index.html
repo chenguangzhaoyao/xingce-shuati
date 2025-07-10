@@ -5,37 +5,37 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>图形推理刷题</title>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; line-height: 1.6; background: #f0f2f5; color: #333; }
-    。container { max-width: 800px; margin: 20px auto; padding: 20px; }
-    。question-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; }
-    。question-header { border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; font-weight: bold;}
-    。question-body p { margin-top: 0; }
-    。options-list { list-style: none; padding: 0; }
-    。options-list li { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; padding: 12px 15px; margin-bottom: 10px; cursor: pointer; transition: background-color 0.2s; }
-    。options-list li:hover { background: #e9ecef; }
-    。feedback-area { margin-top: 15px; }
-    。answer, .explanation { display: none; margin-top: 15px; padding: 15px; background: #e6f7ff; border-left: 4px solid #1890ff; border-radius: 4px; }
-    。navigation { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; }
+    /* 【问题修复】这里所有的中文句号“。”都已修正为英文句点“.” */
+
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; line-height: 1.6; background: #f0f2f5; color: #333; margin: 0; padding: 0; }
+    .container { max-width: 800px; margin: 20px auto; padding: 20px; }
+    .question-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    .question-header { border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; font-weight: bold;}
+    .question-body p { margin-top: 0; }
+    .options-list { list-style: none; padding: 0; }
+    .options-list li { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; padding: 12px 15px; margin-bottom: 10px; cursor: pointer; transition: background-color 0.2s; }
+    .options-list li:hover { background: #e9ecef; }
+    .feedback-area { margin-top: 15px; }
+    .answer, .explanation { display: none; margin-top: 15px; padding: 15px; background: #e6f7ff; border-left: 4px solid #1890ff; border-radius: 4px; }
+    .navigation { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; }
     button { padding: 10px 20px; border: none; background-color: #007bff; color: white; border-radius: 5px; cursor: pointer; font-size: 16px; }
     button:disabled { background-color: #ccc; cursor: not-allowed; }
     h1 { text-align: center; color: #1d3557; }
     #questionSelector { padding: 8px 12px; border: 1px solid #ccc; border-radius: 5px; background-color: white; font-size: 16px; cursor: pointer; }
 
-    /* --- 【重点修改】图片容器和图片的样式 --- */
-    。image-container {
-      /* 1. 设置为 Flex 容器，让内部图片能够对齐 */
+    /* --- 图片容器和图片的样式 (object-fit 方案) --- */
+    .image-container {
       display: flex;
       justify-content: center; /* 水平居中 */
       align-items: center;    /* 垂直居中 */
       gap: 10px;             /* 图片间距 */
       margin-bottom: 15px;
       padding: 10px;
-      border: 1px dashed #ddd; /* 加个虚线框方便看范围 */
+      border: 1px dashed #ddd; /* 虚线框方便看范围 */
       border-radius: 4px;
-      min-height: 100px; /* 至少有个高度 */
+      min-height: 100px; 
     }
     
-    /* 2. 为题干图片和选项图片容器分别设置不同的高度 */
     .problem-image-container {
         height: 250px;
     }
@@ -45,13 +45,10 @@
     }
 
     .image-container img {
-      /* 3. 这是解决问题的核心！ */
-      max-width: 100%;  /* 防止图片过宽溢出 */
-      height: 100%;     /* 让图片高度填满容器 */
-      width: auto;      /* 宽度自动缩放，防止和 height 冲突 */
-      object-fit: contain; /* ✨ 王牌属性：保持比例，完整显示！✨ */
-
-      /* 保持您原来的样式 */
+      max-width: 100%;
+      height: 100%;
+      width: auto;
+      object-fit: contain; /* ✨ 核心属性：保持比例，完整显示 ✨ */
       border: 1px solid #ddd;
       border-radius: 4px;
       background: #fff;
@@ -76,8 +73,8 @@
 <script>
 // --- 1. 配置 ---
 const imageBaseUrl = "images/"; 
-const questionsJsonFile = "graphical_questions.json"; // 已更新为您提供的文件名
-const imageCountsJsonFile = "image_counts.json";
+const questionsJsonFile = "graphical_questions.json"; // 【确认】文件名未修改
+const imageCountsJsonFile = "image_counts.json";     // 【确认】文件名未修改
 
 // --- 2. 全局变量 ---
 let questions = [];
@@ -117,12 +114,8 @@ function renderQuestion() {
   if (questions.length === 0) return;
   const q = questions[currentQuestionIndex];
 
-  // 【重点修改】根据图片数量判断是题干图还是选项图
-  // 假设图片数量 > 1 的是题干组合图，数量 === 1 的是单个主图或解析图
-  // 这个逻辑可以根据您的实际情况调整。
-  // 更简单的方法是看图片的文件名，但目前的逻辑也可以工作。
-  // 我们这里简单地把所有图片都放在大的容器里，为简化起见。
-  const imageContainerClass = "problem-image-container"; // 统一使用大容器
+  // 统一使用大的图片容器，方便展示。
+  const imageContainerClass = "problem-image-container";
 
   const imagesHtml = (q.images || []).map(imgName => 
       `<img src="${imageBaseUrl}${imgName}" alt="题目图 ${imgName}" onerror="this.alt='图片加载失败';">`
@@ -138,7 +131,7 @@ function renderQuestion() {
       <div class="question-body">
         <p>${q.question || "题目内容缺失"}</p>
         
-        <!-- 【重点修改】在这里应用新的容器类 -->
+        <!-- 应用了正确的图片容器类 -->
         <div class="image-container ${imageContainerClass}">${imagesHtml}</div>
         
         <ul class="options-list">${optionsHtml}</ul>
