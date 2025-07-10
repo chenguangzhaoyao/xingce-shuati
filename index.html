@@ -138,7 +138,7 @@ Promise.all([
     renderQuestion();
 })
 .catch(error => {
-    app.innerHTML = `<p style="color: red; text-align: center;">加载题目数据时出错.<br>${error.message}</p>`;
+    app.innerHTML = `<p style="color: red; text-align: center;">加载题目数据时出错。<br>${error.message}</p>`;
     console.error("加载数据失败:", error);
 });
 
@@ -223,7 +223,7 @@ function checkAnswer(selectedOption) {
       }
 
   } else {
-      alert("本题没有提供标准答案.");
+      alert("本题没有提供标准答案。");
   }
   toggleFeedback();
 }
@@ -266,7 +266,7 @@ function collectQuestion(questionId) {
         renderQuestion(); // 重新渲染当前题目，更新“收藏”按钮状态
         alert(`题目 ${questionId} 已成功收藏！`);
     } else {
-        alert(`题目 ${questionId} 已经在您的错题本里了.`);
+        alert(`题目 ${questionId} 已经在您的错题本里了。`);
     }
 }
 
@@ -275,7 +275,7 @@ function removeFromNotebook(questionId) {
     wrongQuestionIds = wrongQuestionIds.filter(id => id !== questionId);
     saveState();
     showNotebook(); // 重新渲染错题本，实时看到移除效果
-    alert(`题目 ${questionId} 已从错题本移除.`);
+    alert(`题目 ${questionId} 已从错题本移除。`);
 }
 
 // 显示错题本
