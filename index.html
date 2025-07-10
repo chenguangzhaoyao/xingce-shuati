@@ -6,39 +6,39 @@
   <title>图形推理刷题</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; line-height: 1.6; background: #f0f2f5; color: #333; margin: 0; padding: 0; }
-    。container { max-width: 800px; margin: 20px auto; padding: 20px; }
-    。question-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; }
-    。question-header { border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
-    。question-body p { margin-top: 0; }
-    。options-list { list-style: none; padding: 0; }
-    。options-list li { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; padding: 12px 15px; margin-bottom: 10px; cursor: pointer; transition: background-color 0.2s; }
-    。options-list li:hover { background: #e9ecef; }
-    。feedback-area { margin-top: 15px; }
-    。answer, .explanation { display: none; margin-top: 15px; padding: 15px; background: #e6f7ff; border-left: 4px solid #1890ff; border-radius: 4px; }
-    。navigation { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; flex-wrap: wrap; gap: 10px;}
+    .container { max-width: 800px; margin: 20px auto; padding: 20px; }
+    .question-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    .question-header { border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+    .question-body p { margin-top: 0; }
+    .options-list { list-style: none; padding: 0; }
+    .options-list li { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; padding: 12px 15px; margin-bottom: 10px; cursor: pointer; transition: background-color 0.2s; }
+    .options-list li:hover { background: #e9ecef; }
+    .feedback-area { margin-top: 15px; }
+    .answer, .explanation { display: none; margin-top: 15px; padding: 15px; background: #e6f7ff; border-left: 4px solid #1890ff; border-radius: 4px; }
+    .navigation { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; flex-wrap: wrap; gap: 10px;}
     button { padding: 10px 20px; border: none; background-color: #007bff; color: white; border-radius: 5px; cursor: pointer; font-size: 16px; transition: background-color 0.2s; }
     button:hover:not(:disabled) { background-color: #0056b3; }
     button:disabled { background-color: #ccc; cursor: not-allowed; }
     h1 { text-align: center; color: #1d3557; }
     #questionSelector { padding: 8px 12px; border: 1px solid #ccc; border-radius: 5px; background-color: white; font-size: 16px; cursor: pointer; }
 
-    。image-container { display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 15px; padding: 10px; border: 1px dashed #ddd; border-radius: 4px; min-height: 100px; }
-    。problem-image-container { height: 250px; }
-    。option-image-container { height: 120px; }
-    。image-container img { max-width: 100%; height: 100%; width: auto; object-fit: contain; border: 1px solid #ddd; border-radius: 4px; background: #fff; padding: 5px; box-sizing: border-box; }
+    .image-container { display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 15px; padding: 10px; border: 1px dashed #ddd; border-radius: 4px; min-height: 100px; }
+    .problem-image-container { height: 250px; }
+    .option-image-container { height: 120px; }
+    .image-container img { max-width: 100%; height: 100%; width: auto; object-fit: contain; border: 1px solid #ddd; border-radius: 4px; background: #fff; padding: 5px; box-sizing: border-box; }
 
     /* --- 新增：错题本相关样式 --- */
-    。controls-extra { display: flex; align-items: center; gap: 15px; }
-    。setting-toggle { display: flex; align-items: center; gap: 5px; }
+    .controls-extra { display: flex; align-items: center; gap: 15px; }
+    .setting-toggle { display: flex; align-items: center; gap: 5px; }
     #viewNotebookBtn { background-color: #28a745; }
     
-    。collect-btn { background-color: #ffc107; color: #333; padding: 5px 10px; font-size: 14px; }
-    。collect-btn.collected { background-color: #e0a800; }
+    .collect-btn { background-color: #ffc107; color: #333; padding: 5px 10px; font-size: 14px; }
+    .collect-btn.collected { background-color: #e0a800; }
     
     #notebookContainer { display: none; }
-    。notebook-card { background: #fff8e1; border: 1px solid #ffeeba; margin-bottom: 20px; padding: 20px; border-radius: 8px; }
-    。notebook-card h3 { margin-top: 0; }
-    。remove-btn { background-color: #dc3545; font-size: 14px; padding: 5px 10px; margin-top: 10px; }
+    .notebook-card { background: #fff8e1; border: 1px solid #ffeeba; margin-bottom: 20px; padding: 20px; border-radius: 8px; }
+    .notebook-card h3 { margin-top: 0; }
+    .remove-btn { background-color: #dc3545; font-size: 14px; padding: 5px 10px; margin-top: 10px; }
     #backToQuizBtn { background-color: #6c757d; display: block; margin: 20px auto 0; }
   </style>
 </head>
@@ -138,7 +138,7 @@ Promise.all([
     renderQuestion();
 })
 .catch(error => {
-    app.innerHTML = `<p style="color: red; text-align: center;">加载题目数据时出错。<br>${error.message}</p>`;
+    app.innerHTML = `<p style="color: red; text-align: center;">加载题目数据时出错.<br>${error.message}</p>`;
     console.error("加载数据失败:", error);
 });
 
@@ -223,7 +223,7 @@ function checkAnswer(selectedOption) {
       }
 
   } else {
-      alert("本题没有提供标准答案。");
+      alert("本题没有提供标准答案.");
   }
   toggleFeedback();
 }
@@ -266,7 +266,7 @@ function collectQuestion(questionId) {
         renderQuestion(); // 重新渲染当前题目，更新“收藏”按钮状态
         alert(`题目 ${questionId} 已成功收藏！`);
     } else {
-        alert(`题目 ${questionId} 已经在您的错题本里了。`);
+        alert(`题目 ${questionId} 已经在您的错题本里了.`);
     }
 }
 
@@ -275,7 +275,7 @@ function removeFromNotebook(questionId) {
     wrongQuestionIds = wrongQuestionIds.filter(id => id !== questionId);
     saveState();
     showNotebook(); // 重新渲染错题本，实时看到移除效果
-    alert(`题目 ${questionId} 已从错题本移除。`);
+    alert(`题目 ${questionId} 已从错题本移除.`);
 }
 
 // 显示错题本
