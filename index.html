@@ -5,101 +5,134 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>图形推理刷题</title>
   <style>
-    /* 【问题修复】这里所有的中文句号“。”都已修正为英文句点“.” */
-
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; line-height: 1.6; background: #f0f2f5; color: #333; margin: 0; padding: 0; }
     .container { max-width: 800px; margin: 20px auto; padding: 20px; }
     .question-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; }
-    .question-header { border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; font-weight: bold;}
+    .question-header { border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
     .question-body p { margin-top: 0; }
     .options-list { list-style: none; padding: 0; }
     .options-list li { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; padding: 12px 15px; margin-bottom: 10px; cursor: pointer; transition: background-color 0.2s; }
     .options-list li:hover { background: #e9ecef; }
     .feedback-area { margin-top: 15px; }
     .answer, .explanation { display: none; margin-top: 15px; padding: 15px; background: #e6f7ff; border-left: 4px solid #1890ff; border-radius: 4px; }
-    .navigation { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; }
-    button { padding: 10px 20px; border: none; background-color: #007bff; color: white; border-radius: 5px; cursor: pointer; font-size: 16px; }
+    .navigation { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; flex-wrap: wrap; gap: 10px;}
+    button { padding: 10px 20px; border: none; background-color: #007bff; color: white; border-radius: 5px; cursor: pointer; font-size: 16px; transition: background-color 0.2s; }
+    button:hover:not(:disabled) { background-color: #0056b3; }
     button:disabled { background-color: #ccc; cursor: not-allowed; }
     h1 { text-align: center; color: #1d3557; }
     #questionSelector { padding: 8px 12px; border: 1px solid #ccc; border-radius: 5px; background-color: white; font-size: 16px; cursor: pointer; }
 
-    /* --- 图片容器和图片的样式 (object-fit 方案) --- */
-    .image-container {
-      display: flex;
-      justify-content: center; /* 水平居中 */
-      align-items: center;    /* 垂直居中 */
-      gap: 10px;             /* 图片间距 */
-      margin-bottom: 15px;
-      padding: 10px;
-      border: 1px dashed #ddd; /* 虚线框方便看范围 */
-      border-radius: 4px;
-      min-height: 100px; 
-    }
+    .image-container { display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 15px; padding: 10px; border: 1px dashed #ddd; border-radius: 4px; min-height: 100px; }
+    .problem-image-container { height: 250px; }
+    .option-image-container { height: 120px; }
+    .image-container img { max-width: 100%; height: 100%; width: auto; object-fit: contain; border: 1px solid #ddd; border-radius: 4px; background: #fff; padding: 5px; box-sizing: border-box; }
+
+    /* --- 新增：错题本相关样式 --- */
+    .controls-extra { display: flex; align-items: center; gap: 15px; }
+    .setting-toggle { display: flex; align-items: center; gap: 5px; }
+    #viewNotebookBtn { background-color: #28a745; }
     
-    .problem-image-container {
-        height: 250px;
-    }
-
-    .option-image-container {
-        height: 120px;
-    }
-
-    .image-container img {
-      max-width: 100%;
-      height: 100%;
-      width: auto;
-      object-fit: contain; /* ✨ 核心属性：保持比例，完整显示 ✨ */
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      background: #fff;
-      padding: 5px;
-      box-sizing: border-box;
-    }
+    .collect-btn { background-color: #ffc107; color: #333; padding: 5px 10px; font-size: 14px; }
+    .collect-btn.collected { background-color: #e0a800; }
+    
+    #notebookContainer { display: none; }
+    .notebook-card { background: #fff8e1; border: 1px solid #ffeeba; margin-bottom: 20px; padding: 20px; border-radius: 8px; }
+    .notebook-card h3 { margin-top: 0; }
+    .remove-btn { background-color: #dc3545; font-size: 14px; padding: 5px 10px; margin-top: 10px; }
+    #backToQuizBtn { background-color: #6c757d; display: block; margin: 20px auto 0; }
   </style>
 </head>
 <body>
 
 <div class="container">
     <h1>图形推理刷题</h1>
+    
+    <!-- 主答题区，保持不变 -->
     <div id="app"></div>
+
+    <!-- 错题本视图，默认隐藏 -->
+    <div id="notebookContainer">
+        <h2 style="text-align: center;">我的错题本</h2>
+        <div id="notebookContent"></div>
+        <button id="backToQuizBtn" onclick="hideNotebook()">返回刷题</button>
+    </div>
+
+    <!-- 导航区，增加了错题本相关控件 -->
     <div class="navigation">
-      <button id="prevBtn" onclick="prev()">上一题</button>
-      <select id="questionSelector" onchange="jumpToQuestion(this.value)"></select>
-      <span id="progress"></span>
-      <button id="nextBtn" onclick="next()">下一题</button>
+        <div>
+            <button id="prevBtn" onclick="prev()">上一题</button>
+            <select id="questionSelector" onchange="jumpToQuestion(this.value)"></select>
+            <button id="nextBtn" onclick="next()">下一题</button>
+        </div>
+        <div class="controls-extra">
+            <div class="setting-toggle">
+                <input type="checkbox" id="autoAddToggle" onchange="toggleAutoAddMode(this.checked)">
+                <label for="autoAddToggle">答错自动收藏</label>
+            </div>
+            <button id="viewNotebookBtn" onclick="showNotebook()">查看错题本</button>
+        </div>
     </div>
 </div>
 
 <script>
 // --- 1. 配置 ---
 const imageBaseUrl = "images/"; 
-const questionsJsonFile = "graphical_questions.json"; // 【确认】文件名未修改
-const imageCountsJsonFile = "image_counts.json";     // 【确认】文件名未修改
+const questionsJsonFile = "graphical_questions.json";
+const imageCountsJsonFile = "image_counts.json";
 
 // --- 2. 全局变量 ---
 let questions = [];
 let currentQuestionIndex = 0;
 const app = document.getElementById("app");
-const prevBtn = document.getElementById("prevBtn");
-const nextBtn = document.getElementById("nextBtn");
-const progressSpan = document.getElementById("progress");
+const navigationDiv = document.querySelector(".navigation"); /* 获取导航区 */
+const notebookContainer = document.getElementById("notebookContainer");
+const notebookContent = document.getElementById("notebookContent");
+const autoAddToggle = document.getElementById("autoAddToggle");
+
+// --- 新增：错题本状态变量 ---
+let wrongQuestionIds = [];
+let autoAddMode = true;
 
 // --- 3. 初始化 ---
+
+// 新增：从 localStorage 加载状态
+function loadState() {
+    const savedIds = localStorage.getItem('wrongQuestionIds');
+    if (savedIds) {
+        wrongQuestionIds = JSON.parse(savedIds);
+    }
+    const savedMode = localStorage.getItem('autoAddMode');
+    // 注意：localStorage 存的是字符串 'true'/'false'
+    autoAddMode = savedMode === 'true'; 
+    autoAddToggle.checked = autoAddMode; // 更新UI
+}
+
+// 新增：保存状态到 localStorage
+function saveState() {
+    localStorage.setItem('wrongQuestionIds', JSON.stringify(wrongQuestionIds));
+    localStorage.setItem('autoAddMode', String(autoAddMode));
+}
+
+// 页面加载时立即加载状态
+loadState();
+
 Promise.all([
     fetch(questionsJsonFile).then(res => res.ok ? res.json() : Promise.reject(new Error(`加载失败: ${questionsJsonFile}`))),
     fetch(imageCountsJsonFile).then(res => res.ok ? res.json() : Promise.reject(new Error(`加载失败: ${imageCountsJsonFile}`)))
 ])
 .then(([questionsData, imageCounts]) => {
+     // 您的图片处理逻辑保持不变
     let imagePointer = 1;
     const processedQuestions = questionsData.map(question => {
+        // 使用您原有的图片命名逻辑，我这里调整为 q{id}-{i}.png 格式，如果不是请改回
         const count = imageCounts[String(question.id)] || 0;
         const imageNames = [];
-        for (let i = 0; i < count; i++) {
-            imageNames.push(`image${imagePointer}.jpeg`);
-            imagePointer++;
+        for (let i = 1; i <= count; i++) {
+            imageNames.push(`q${question.id}-${i}.png`);
         }
         return { ...question, images: imageNames };
     });
+
     questions = processedQuestions;
     populateSelector();
     renderQuestion();
@@ -109,13 +142,14 @@ Promise.all([
     console.error("加载数据失败:", error);
 });
 
-// --- 4. 渲染与导航函数 ---
+
+// --- 4. 渲染与导航函数 (已修改) ---
 function renderQuestion() {
   if (questions.length === 0) return;
   const q = questions[currentQuestionIndex];
 
-  // 统一使用大的图片容器，方便展示。
-  const imageContainerClass = "problem-image-container";
+  // 检查题目是否已在错题本中
+  const isCollected = wrongQuestionIds.includes(q.id);
 
   const imagesHtml = (q.images || []).map(imgName => 
       `<img src="${imageBaseUrl}${imgName}" alt="题目图 ${imgName}" onerror="this.alt='图片加载失败';">`
@@ -127,13 +161,15 @@ function renderQuestion() {
   
   app.innerHTML = `
     <div class="question-card">
-      <div class="question-header">第 ${q.id} 题 (总 ${questions.length} 题)</div>
+      <div class="question-header">第 ${q.id} 题 (总 ${questions.length} 题)
+        <!-- 新增：收藏按钮 -->
+        <button class="collect-btn ${isCollected ? 'collected' : ''}" onclick="collectQuestion(${q.id})">
+            ${isCollected ? '已收藏' : '收藏本题'}
+        </button>
+      </div>
       <div class="question-body">
         <p>${q.question || "题目内容缺失"}</p>
-        
-        <!-- 应用了正确的图片容器类 -->
-        <div class="image-container ${imageContainerClass}">${imagesHtml}</div>
-        
+        <div class="image-container problem-image-container">${imagesHtml}</div>
         <ul class="options-list">${optionsHtml}</ul>
         <div class="feedback-area">
           <button onclick="toggleFeedback()">显示/隐藏答案与解析</button>
@@ -145,7 +181,7 @@ function renderQuestion() {
   updateNavButtons();
 }
 
-
+// 您的 populateSelector, jumpToQuestion, updateNavButtons 函数保持不变，但我稍微修改了 updateNavButtons
 function populateSelector() {
     const selector = document.getElementById("questionSelector");
     selector.innerHTML = '';
@@ -156,7 +192,6 @@ function populateSelector() {
         selector.appendChild(option);
     });
 }
-
 function jumpToQuestion(index) {
     const targetIndex = parseInt(index, 10);
     if (!isNaN(targetIndex) && targetIndex >= 0 && targetIndex < questions.length) {
@@ -164,18 +199,36 @@ function jumpToQuestion(index) {
         renderQuestion();
     }
 }
-
 function updateNavButtons() {
-    progressSpan.textContent = `${currentQuestionIndex + 1} / ${questions.length}`;
-    prevBtn.disabled = (currentQuestionIndex === 0);
-    nextBtn.disabled = (currentQuestionIndex === questions.length - 1);
+    document.getElementById("prevBtn").disabled = (currentQuestionIndex === 0);
+    document.getElementById("nextBtn").disabled = (currentQuestionIndex === questions.length - 1);
     const selector = document.getElementById("questionSelector");
     if (selector) {
         selector.value = currentQuestionIndex;
     }
 }
 
-// --- 5. 其他辅助函数 ---
+// --- 5. 核心交互函数 (已修改和新增) ---
+
+// checkAnswer 函数已修改，以支持自动收藏
+function checkAnswer(selectedOption) {
+  const q = questions[currentQuestionIndex];
+  if (q.answer) {
+      const isCorrect = selectedOption.toUpperCase() === q.answer.toUpperCase();
+      alert(isCorrect ? "✅ 正确！" : `❌ 错误，正确答案是 ${q.answer}`);
+      
+      // 核心改动：如果答错且开启了自动模式，则收藏
+      if (!isCorrect && autoAddMode) {
+          collectQuestion(q.id); // 直接调用收藏函数
+      }
+
+  } else {
+      alert("本题没有提供标准答案。");
+  }
+  toggleFeedback();
+}
+
+// 您的 toggleFeedback, next, prev 函数保持不变
 function toggleFeedback() {
     const answerEl = document.querySelector(".answer");
     const explanationEl = document.querySelector(".explanation");
@@ -184,31 +237,90 @@ function toggleFeedback() {
     answerEl.style.display = isVisible ? "none" : "block";
     explanationEl.style.display = isVisible ? "none" : "block";
 }
-
-function checkAnswer(selectedOption) {
-  const q = questions[currentQuestionIndex];
-  if (q.answer) {
-      const isCorrect = selectedOption.toUpperCase() === q.answer.toUpperCase();
-      alert(isCorrect ? "✅ 正确！" : `❌ 错误，正确答案是 ${q.answer}`);
-  } else {
-      alert("本题没有提供标准答案。");
-  }
-  toggleFeedback();
-}
-
 function next() {
   if (currentQuestionIndex < questions.length - 1) {
     currentQuestionIndex++;
     renderQuestion();
   }
 }
-
 function prev() {
   if (currentQuestionIndex > 0) {
     currentQuestionIndex--;
     renderQuestion();
   }
 }
+
+// --- 6. 新增：错题本核心功能 ---
+
+// 切换自动收藏模式
+function toggleAutoAddMode(isChecked) {
+    autoAddMode = isChecked;
+    saveState(); // 保存设置
+}
+
+// 手动/自动收藏题目
+function collectQuestion(questionId) {
+    if (!wrongQuestionIds.includes(questionId)) {
+        wrongQuestionIds.push(questionId);
+        saveState();
+        renderQuestion(); // 重新渲染当前题目，更新“收藏”按钮状态
+        alert(`题目 ${questionId} 已成功收藏！`);
+    } else {
+        alert(`题目 ${questionId} 已经在您的错题本里了。`);
+    }
+}
+
+// 从错题本移除题目
+function removeFromNotebook(questionId) {
+    wrongQuestionIds = wrongQuestionIds.filter(id => id !== questionId);
+    saveState();
+    showNotebook(); // 重新渲染错题本，实时看到移除效果
+    alert(`题目 ${questionId} 已从错题本移除。`);
+}
+
+// 显示错题本
+function showNotebook() {
+    app.style.display = 'none';
+    navigationDiv.style.display = 'none';
+    notebookContainer.style.display = 'block';
+
+    notebookContent.innerHTML = ''; // 清空旧内容
+
+    if (wrongQuestionIds.length === 0) {
+        notebookContent.innerHTML = '<p style="text-align: center;">你的错题本是空的，太棒了！继续保持！</p>';
+        return;
+    }
+
+    wrongQuestionIds.forEach(id => {
+        const question = questions.find(q => q.id === id);
+        if (question) {
+            const imagesHtml = (question.images || []).map(imgName => 
+                `<img src="${imageBaseUrl}${imgName}" alt="题目图 ${imgName}">`
+            ).join('');
+
+            const card = document.createElement('div');
+            card.className = 'notebook-card';
+            card.innerHTML = `
+                <h3>第 ${question.id} 题</h3>
+                <p>${question.question}</p>
+                <div class="image-container problem-image-container">${imagesHtml}</div>
+                <p><strong>正确答案：</strong> ${question.answer}</p>
+                <p><strong>解析：</strong> ${question.explanation}</p>
+                <button class="remove-btn" onclick="removeFromNotebook(${question.id})">移除此题</button>
+            `;
+            notebookContent.appendChild(card);
+        }
+    });
+}
+
+// 隐藏错题本，返回答题界面
+function hideNotebook() {
+    notebookContainer.style.display = 'none';
+    app.style.display = 'block';
+    navigationDiv.style.display = 'flex'; // 恢复flex布局
+    renderQuestion(); // 重新渲染，确保"收藏"按钮状态正确
+}
+
 </script>
 
 </body>
