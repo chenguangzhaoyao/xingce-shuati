@@ -6,23 +6,23 @@
   <title>图形推理刷题</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; line-height: 1.6; background: #f0f2f5; color: #333; }
-    .container { max-width: 800px; margin: 20px auto; padding: 20px; }
-    .question-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; }
-    .question-header { border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; font-weight: bold;}
-    .question-body p { margin-top: 0; }
-    .options-list { list-style: none; padding: 0; }
-    .options-list li { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; padding: 12px 15px; margin-bottom: 10px; cursor: pointer; transition: background-color 0.2s; }
-    .options-list li:hover { background: #e9ecef; }
-    .feedback-area { margin-top: 15px; }
-    .answer, .explanation { display: none; margin-top: 15px; padding: 15px; background: #e6f7ff; border-left: 4px solid #1890ff; border-radius: 4px; }
-    .navigation { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; }
+    。container { max-width: 800px; margin: 20px auto; padding: 20px; }
+    。question-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    。question-header { border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; font-weight: bold;}
+    。question-body p { margin-top: 0; }
+    。options-list { list-style: none; padding: 0; }
+    。options-list li { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; padding: 12px 15px; margin-bottom: 10px; cursor: pointer; transition: background-color 0.2s; }
+    。options-list li:hover { background: #e9ecef; }
+    。feedback-area { margin-top: 15px; }
+    。answer, .explanation { display: none; margin-top: 15px; padding: 15px; background: #e6f7ff; border-left: 4px solid #1890ff; border-radius: 4px; }
+    。navigation { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; }
     button { padding: 10px 20px; border: none; background-color: #007bff; color: white; border-radius: 5px; cursor: pointer; font-size: 16px; }
     button:disabled { background-color: #ccc; cursor: not-allowed; }
     h1 { text-align: center; color: #1d3557; }
     #questionSelector { padding: 8px 12px; border: 1px solid #ccc; border-radius: 5px; background-color: white; font-size: 16px; cursor: pointer; }
 
     /* --- 【重点修改】图片容器和图片的样式 --- */
-    .image-container {
+    。image-container {
       /* 1. 设置为 Flex 容器，让内部图片能够对齐 */
       display: flex;
       justify-content: center; /* 水平居中 */
@@ -76,7 +76,7 @@
 <script>
 // --- 1. 配置 ---
 const imageBaseUrl = "images/"; 
-const questionsJsonFile = "202507101225.json"; // 已更新为您提供的文件名
+const questionsJsonFile = "graphical_questions.json"; // 已更新为您提供的文件名
 const imageCountsJsonFile = "image_counts.json";
 
 // --- 2. 全局变量 ---
