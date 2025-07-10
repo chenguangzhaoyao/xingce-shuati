@@ -96,7 +96,6 @@ function loadState() {
         wrongQuestionIds = JSON.parse(savedIds);
     }
     const savedMode = localStorage.getItem('autoAddMode');
-    // ✅ 优化：这样在第一次加载(savedMode为null)时，autoAddMode会是true，符合预期
     autoAddMode = savedMode !== 'false'; 
     autoAddToggle.checked = autoAddMode;
 }
@@ -117,7 +116,7 @@ Promise.all([
     const processedQuestions = questionsData.map(question => {
         const count = imageCounts[String(question.id)] || 0;
         const imageNames = [];
-        // ✅ 修正：将 <= 改为 <，修复“差一错误”
+        // ✅ 最终修正：将 <= 改为 <，确保图片数量完全正确！
         for (let i = 0; i < count; i++) {
             imageNames.push(`image${imagePointer}.jpeg`);
             imagePointer++;
