@@ -17,19 +17,21 @@
     .answer, .explanation { display: none; margin-top: 15px; padding: 15px; background: #e6f7ff; border-left: 4px solid #1890ff; border-radius: 4px; }
     .image-container { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
     .image-container img { max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px; background: #fff; padding: 5px; box-sizing: border-box; }
-    .navigation { display: flex; justify-content: space-between; margin-top: 20px; }
+    .navigation { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; }
     button { padding: 10px 20px; border: none; background-color: #007bff; color: white; border-radius: 5px; cursor: pointer; font-size: 16px; }
     button:disabled { background-color: #ccc; cursor: not-allowed; }
     h1 { text-align: center; color: #1d3557; }
+    #questionSelector { padding: 8px 12px; border: 1px solid #ccc; border-radius: 5px; background-color: white; font-size: 16px; cursor: pointer; }
   </style>
 </head>
 <body>
 
 <div class="container">
     <h1>图形推理刷题</h1>
-    <div id="app"><!-- 题目内容将在这里动态生成 --></div>
+    <div id="app"></div>
     <div class="navigation">
       <button id="prevBtn" onclick="prev()">上一题</button>
+      <select id="questionSelector" onchange="jumpToQuestion(this.value)"></select>
       <span id="progress"></span>
       <button id="nextBtn" onclick="next()">下一题</button>
     </div>
@@ -44,7 +46,6 @@ const imageCountsJsonFile = "image_counts.json";
 // --- 2. 全局变量 ---
 let questions = [];
 let currentQuestionIndex = 0;
-
 const app = document.getElementById("app");
 const prevBtn = document.getElementById("prevBtn");
 const nextBtn = document.getElementById("nextBtn");
@@ -56,78 +57,82 @@ Promise.all([
     fetch(imageCountsJsonFile).then(res => res.ok ? res.json() : Promise.reject(new Error(`加载失败: ${imageCountsJsonFile}`)))
 ])
 .then(([questionsData, imageCounts]) => {
-    
     let imagePointer = 1;
-    
     const processedQuestions = questionsData.map(question => {
         const count = imageCounts[String(question.id)] || 0;
         const imageNames = [];
-        
         for (let i = 0; i < count; i++) {
-            // ==========================================================
-            // ===                ★★★ 核心修改点 ★★★                ===
-            // ==========================================================
-            imageNames.push(`image${imagePointer}.jpeg`); // 已从 .png 修改为 .jpeg
+            imageNames.push(`image${imagePointer}.jpeg`);
             imagePointer++;
         }
-        
-        return {
-            ...question,
-            images: imageNames
-        };
+        return { ...question, images: imageNames };
     });
-
     questions = processedQuestions;
-    renderQuestion();
-
+    populateSelector(); // 填充下拉框
+    renderQuestion(); // 渲染第一题
 })
 .catch(error => {
-    app.innerHTML = `<p style="color: red; text-align: center;">加载题目数据时出错，请检查文件是否存在或JSON格式是否正确。<br>${error.message}</p>`;
+    app.innerHTML = `<p style="color: red; text-align: center;">加载题目数据时出错。<br>${error.message}</p>`;
     console.error("加载数据失败:", error);
 });
 
-
-// --- 4. 渲染函数 ---
+// --- 4. 渲染与导航函数 ---
 function renderQuestion() {
   if (questions.length === 0) return;
   const q = questions[currentQuestionIndex];
-  
-  const imagesHtml = (q.images && Array.isArray(q.images)) 
-    ? q.images.map(imgName => 
-        `<img src="${imageBaseUrl}${imgName}" alt="题目图 ${imgName}" onerror="this.alt='图片加载失败: ${imgName}'; console.error('无法加载图片:', this.src);">`
-      ).join('')
-    : '';
-
-  const optionsHtml = (q.options && Array.isArray(q.options))
-    ? q.options.map(opt => `<li onclick="checkAnswer('${String(opt).charAt(0)}')">${opt}</li>`).join("")
-    : '<li>无选项数据</li>';
-
+  const imagesHtml = (q.images || []).map(imgName => 
+      `<img src="${imageBaseUrl}${imgName}" alt="题目图 ${imgName}" onerror="this.alt='图片加载失败';">`
+  ).join('');
+  const optionsHtml = (q.options || []).map(opt => 
+      `<li onclick="checkAnswer('${String(opt).charAt(0)}')">${opt}</li>`
+  ).join("");
   app.innerHTML = `
     <div class="question-card">
       <div class="question-header">第 ${q.id} 题 (总 ${questions.length} 题)</div>
       <div class="question-body">
         <p>${q.question || "题目内容缺失"}</p>
         <div class="image-container">${imagesHtml}</div>
-        <ul class="options-list">
-          ${optionsHtml}
-        </ul>
+        <ul class="options-list">${optionsHtml}</ul>
         <div class="feedback-area">
           <button onclick="toggleFeedback()">显示/隐藏答案与解析</button>
           <div class="answer" style="display: none;"><strong>答案：</strong> ${q.answer || "无"}</div>
           <div class="explanation" style="display: none;"><strong>解析：</strong> ${q.explanation || "无"}</div>
         </div>
       </div>
-    </div>
-  `;
+    </div>`;
   updateNavButtons();
 }
 
-// --- 5. 其他函数 (无需修改) ---
+function populateSelector() {
+    const selector = document.getElementById("questionSelector");
+    selector.innerHTML = ''; // 清空旧选项，以防万一
+    questions.forEach((q, index) => {
+        const option = document.createElement("option");
+        option.value = index;
+        option.textContent = `第 ${q.id} 题`;
+        selector.appendChild(option);
+    });
+}
+
+function jumpToQuestion(index) {
+    const targetIndex = parseInt(index, 10);
+    if (!isNaN(targetIndex) && targetIndex >= 0 && targetIndex < questions.length) {
+        currentQuestionIndex = targetIndex;
+        renderQuestion();
+    }
+}
+
 function updateNavButtons() {
     progressSpan.textContent = `${currentQuestionIndex + 1} / ${questions.length}`;
     prevBtn.disabled = (currentQuestionIndex === 0);
     nextBtn.disabled = (currentQuestionIndex === questions.length - 1);
+    const selector = document.getElementById("questionSelector");
+    if (selector) {
+        selector.value = currentQuestionIndex;
+    }
 }
+
+// --- 5. 其他辅助函数 ---
 function toggleFeedback() {
     const answerEl = document.querySelector(".answer");
     const explanationEl = document.querySelector(".explanation");
@@ -136,6 +141,7 @@ function toggleFeedback() {
     answerEl.style.display = isVisible ? "none" : "block";
     explanationEl.style.display = isVisible ? "none" : "block";
 }
+
 function checkAnswer(selectedOption) {
   const q = questions[currentQuestionIndex];
   if (q.answer) {
@@ -146,12 +152,14 @@ function checkAnswer(selectedOption) {
   }
   toggleFeedback();
 }
+
 function next() {
   if (currentQuestionIndex < questions.length - 1) {
     currentQuestionIndex++;
     renderQuestion();
   }
 }
+
 function prev() {
   if (currentQuestionIndex > 0) {
     currentQuestionIndex--;
