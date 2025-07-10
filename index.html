@@ -124,11 +124,11 @@ Promise.all([
      // 您的图片处理逻辑保持不变
     let imagePointer = 1;
     const processedQuestions = questionsData.map(question => {
-        // 使用您原有的图片命名逻辑，我这里调整为 q{id}-{i}.png 格式，如果不是请改回
         const count = imageCounts[String(question.id)] || 0;
         const imageNames = [];
-        for (let i = 1; i <= count; i++) {
-            imageNames.push(`q${question.id}-${i}.jpeg`);
+        for (let i = 0; i <= count; i++) {
+            imageNames.push(`image${imagePointer}.jpeg`);
+            imagePointer++;
         }
         return { ...question, images: imageNames };
     });
