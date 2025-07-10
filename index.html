@@ -47,17 +47,14 @@
 <div class="container">
     <h1>图形推理刷题</h1>
     
-    <!-- 主答题区，保持不变 -->
     <div id="app"></div>
 
-    <!-- 错题本视图，默认隐藏 -->
     <div id="notebookContainer">
         <h2 style="text-align: center;">我的错题本</h2>
         <div id="notebookContent"></div>
         <button id="backToQuizBtn" onclick="hideNotebook()">返回刷题</button>
     </div>
 
-    <!-- 导航区，增加了错题本相关控件 -->
     <div class="navigation">
         <div>
             <button id="prevBtn" onclick="prev()">上一题</button>
@@ -84,36 +81,31 @@ const imageCountsJsonFile = "image_counts.json";
 let questions = [];
 let currentQuestionIndex = 0;
 const app = document.getElementById("app");
-const navigationDiv = document.querySelector(".navigation"); /* 获取导航区 */
+const navigationDiv = document.querySelector(".navigation");
 const notebookContainer = document.getElementById("notebookContainer");
 const notebookContent = document.getElementById("notebookContent");
 const autoAddToggle = document.getElementById("autoAddToggle");
 
-// --- 新增：错题本状态变量 ---
 let wrongQuestionIds = [];
 let autoAddMode = true;
 
 // --- 3. 初始化 ---
-
-// 新增：从 localStorage 加载状态
 function loadState() {
     const savedIds = localStorage.getItem('wrongQuestionIds');
     if (savedIds) {
         wrongQuestionIds = JSON.parse(savedIds);
     }
     const savedMode = localStorage.getItem('autoAddMode');
-    // 注意：localStorage 存的是字符串 'true'/'false'
-    autoAddMode = savedMode === 'true'; 
-    autoAddToggle.checked = autoAddMode; // 更新UI
+    // ✅ 优化：这样在第一次加载(savedMode为null)时，autoAddMode会是true，符合预期
+    autoAddMode = savedMode !== 'false'; 
+    autoAddToggle.checked = autoAddMode;
 }
 
-// 新增：保存状态到 localStorage
 function saveState() {
     localStorage.setItem('wrongQuestionIds', JSON.stringify(wrongQuestionIds));
     localStorage.setItem('autoAddMode', String(autoAddMode));
 }
 
-// 页面加载时立即加载状态
 loadState();
 
 Promise.all([
@@ -121,12 +113,12 @@ Promise.all([
     fetch(imageCountsJsonFile).then(res => res.ok ? res.json() : Promise.reject(new Error(`加载失败: ${imageCountsJsonFile}`)))
 ])
 .then(([questionsData, imageCounts]) => {
-     // 您的图片处理逻辑保持不变
     let imagePointer = 1;
     const processedQuestions = questionsData.map(question => {
         const count = imageCounts[String(question.id)] || 0;
         const imageNames = [];
-        for (let i = 0; i <= count; i++) {
+        // ✅ 修正：将 <= 改为 <，修复“差一错误”
+        for (let i = 0; i < count; i++) {
             imageNames.push(`image${imagePointer}.jpeg`);
             imagePointer++;
         }
@@ -143,18 +135,14 @@ Promise.all([
 });
 
 
-// --- 4. 渲染与导航函数 (已修改) ---
+// --- 4. 渲染与导航函数 ---
 function renderQuestion() {
   if (questions.length === 0) return;
   const q = questions[currentQuestionIndex];
-
-  // 检查题目是否已在错题本中
   const isCollected = wrongQuestionIds.includes(q.id);
-
   const imagesHtml = (q.images || []).map(imgName => 
       `<img src="${imageBaseUrl}${imgName}" alt="题目图 ${imgName}" onerror="this.alt='图片加载失败';">`
   ).join('');
-  
   const optionsHtml = (q.options || []).map(opt => 
       `<li onclick="checkAnswer('${String(opt).charAt(0)}')">${opt}</li>`
   ).join("");
@@ -162,7 +150,6 @@ function renderQuestion() {
   app.innerHTML = `
     <div class="question-card">
       <div class="question-header">第 ${q.id} 题 (总 ${questions.length} 题)
-        <!-- 新增：收藏按钮 -->
         <button class="collect-btn ${isCollected ? 'collected' : ''}" onclick="collectQuestion(${q.id})">
             ${isCollected ? '已收藏' : '收藏本题'}
         </button>
@@ -181,7 +168,6 @@ function renderQuestion() {
   updateNavButtons();
 }
 
-// 您的 populateSelector, jumpToQuestion, updateNavButtons 函数保持不变，但我稍微修改了 updateNavButtons
 function populateSelector() {
     const selector = document.getElementById("questionSelector");
     selector.innerHTML = '';
@@ -208,27 +194,21 @@ function updateNavButtons() {
     }
 }
 
-// --- 5. 核心交互函数 (已修改和新增) ---
-
-// checkAnswer 函数已修改，以支持自动收藏
+// --- 5. 核心交互函数 ---
 function checkAnswer(selectedOption) {
   const q = questions[currentQuestionIndex];
   if (q.answer) {
       const isCorrect = selectedOption.toUpperCase() === q.answer.toUpperCase();
       alert(isCorrect ? "✅ 正确！" : `❌ 错误，正确答案是 ${q.answer}`);
-      
-      // 核心改动：如果答错且开启了自动模式，则收藏
       if (!isCorrect && autoAddMode) {
-          collectQuestion(q.id); // 直接调用收藏函数
+          collectQuestion(q.id);
       }
-
   } else {
       alert("本题没有提供标准答案。");
   }
   toggleFeedback();
 }
 
-// 您的 toggleFeedback, next, prev 函数保持不变
 function toggleFeedback() {
     const answerEl = document.querySelector(".answer");
     const explanationEl = document.querySelector(".explanation");
@@ -250,54 +230,45 @@ function prev() {
   }
 }
 
-// --- 6. 新增：错题本核心功能 ---
-
-// 切换自动收藏模式
+// --- 6. 错题本核心功能 ---
 function toggleAutoAddMode(isChecked) {
     autoAddMode = isChecked;
-    saveState(); // 保存设置
+    saveState();
 }
 
-// 手动/自动收藏题目
 function collectQuestion(questionId) {
     if (!wrongQuestionIds.includes(questionId)) {
         wrongQuestionIds.push(questionId);
         saveState();
-        renderQuestion(); // 重新渲染当前题目，更新“收藏”按钮状态
+        renderQuestion();
         alert(`题目 ${questionId} 已成功收藏！`);
     } else {
         alert(`题目 ${questionId} 已经在您的错题本里了。`);
     }
 }
 
-// 从错题本移除题目
 function removeFromNotebook(questionId) {
     wrongQuestionIds = wrongQuestionIds.filter(id => id !== questionId);
     saveState();
-    showNotebook(); // 重新渲染错题本，实时看到移除效果
+    showNotebook();
     alert(`题目 ${questionId} 已从错题本移除。`);
 }
 
-// 显示错题本
 function showNotebook() {
     app.style.display = 'none';
     navigationDiv.style.display = 'none';
     notebookContainer.style.display = 'block';
-
-    notebookContent.innerHTML = ''; // 清空旧内容
-
+    notebookContent.innerHTML = '';
     if (wrongQuestionIds.length === 0) {
         notebookContent.innerHTML = '<p style="text-align: center;">你的错题本是空的，太棒了！继续保持！</p>';
         return;
     }
-
     wrongQuestionIds.forEach(id => {
         const question = questions.find(q => q.id === id);
         if (question) {
             const imagesHtml = (question.images || []).map(imgName => 
                 `<img src="${imageBaseUrl}${imgName}" alt="题目图 ${imgName}">`
             ).join('');
-
             const card = document.createElement('div');
             card.className = 'notebook-card';
             card.innerHTML = `
@@ -313,14 +284,12 @@ function showNotebook() {
     });
 }
 
-// 隐藏错题本，返回答题界面
 function hideNotebook() {
     notebookContainer.style.display = 'none';
     app.style.display = 'block';
-    navigationDiv.style.display = 'flex'; // 恢复flex布局
-    renderQuestion(); // 重新渲染，确保"收藏"按钮状态正确
+    navigationDiv.style.display = 'flex';
+    renderQuestion();
 }
-
 </script>
 
 </body>
